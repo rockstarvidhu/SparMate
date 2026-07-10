@@ -1,0 +1,10 @@
+update profiles set location_lat = 19.0760, location_lng = 72.8777 where id = '00000000-0000-0000-0000-000000000101';
+update profiles set location_lat = 12.9716, location_lng = 77.5946 where id = '00000000-0000-0000-0000-000000000102';
+update profiles set location_lat = 28.6139, location_lng = 77.2090 where id = '00000000-0000-0000-0000-000000000103';
+update profiles set location_lat = 18.5204, location_lng = 73.8567 where id = '00000000-0000-0000-0000-000000000104';
+update profiles set location_lat = 13.0827, location_lng = 80.2707 where id = '00000000-0000-0000-0000-000000000105';
+update profiles set location_lat = 17.3850, location_lng = 78.4867 where id = '00000000-0000-0000-0000-000000000106';
+update profiles set location_lat = 23.0225, location_lng = 72.5714 where id = '00000000-0000-0000-0000-000000000107';
+update profiles set location_lat = 22.5726, location_lng = 88.3639 where id = '00000000-0000-0000-0000-000000000108';
+update profiles set location_lat = 9.9312, location_lng = 76.2673 where id = '00000000-0000-0000-0000-000000000109';
+update profiles set location_lat = 15.2993, location_lng = 74.1240 where id = '00000000-0000-0000-0000-000000000110';

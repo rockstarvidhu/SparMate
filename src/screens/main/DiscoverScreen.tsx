@@ -10,6 +10,7 @@ import { Profile } from '../../types';
 import { colors, spacing, radius, font, skillColor } from '../../constants/theme';
 import { useLocation, getDistanceKm, formatDistance } from '../../hooks/useLocation';
 import { loadFilters } from './FiltersScreen';
+import AvatarComponent from '../../components/Avatar';
 
 const { width: W } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 100;
@@ -36,25 +37,6 @@ const tagStyles = StyleSheet.create({
     backgroundColor: colors.accentDim,
   },
   text: { fontSize: 11, color: colors.accentLight, fontWeight: '500' },
-});
-
-// ── Avatar ────────────────────────────────────────────
-function Avatar({ name }: { name: string }) {
-  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  return (
-    <View style={avatarStyles.circle}>
-      <Text style={avatarStyles.text}>{initials}</Text>
-    </View>
-  );
-}
-const avatarStyles = StyleSheet.create({
-  circle: {
-    width: 90, height: 90, borderRadius: 45,
-    backgroundColor: '#2C1A0E',
-    borderWidth: 2, borderColor: colors.accent,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  text: { fontSize: 28, fontWeight: '600', color: colors.accentLight },
 });
 
 // ── Swipeable Card ────────────────────────────────────
@@ -116,7 +98,12 @@ function SparCard({
             <Text style={styles.verifiedText}>🛡 Gym verified</Text>
           </View>
         )}
-        <Avatar name={profile.name} />
+        <AvatarComponent
+          name={profile.name}
+          userId={profile.id}
+          avatarUrl={profile.avatar_url}
+          size={104}
+        />
       </View>
 
       <View style={styles.cardBody}>
@@ -208,10 +195,15 @@ export default function DiscoverScreen() {
     // Load saved filters
     const filters = await loadFilters();
 
-    // Get already-swiped IDs
-    const { data: swipedRows } = await supabase
-      .from('swipes').select('swiped_id').eq('swiper_id', user.id);
-    const excludeIds = [user.id, ...(swipedRows?.map(r => r.swiped_id) ?? [])];
+    const [{ data: swipedRows }, { data: blockedRows }] = await Promise.all([
+      supabase.from('swipes').select('swiped_id').eq('swiper_id', user.id),
+      supabase.from('blocks').select('blocked_id').eq('blocker_id', user.id),
+    ]);
+    const excludeIds = [
+      user.id,
+      ...(swipedRows?.map(r => r.swiped_id) ?? []),
+      ...(blockedRows?.map(r => r.blocked_id) ?? []),
+    ];
 
     // Build query
     let query = supabase

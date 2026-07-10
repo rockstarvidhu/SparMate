@@ -30,6 +30,7 @@ export interface Profile {
   location_lat: number | null;
   location_lng: number | null;
   location_city: string | null;
+  push_token: string | null;
   created_at: string;
   updated_at: string;
 }

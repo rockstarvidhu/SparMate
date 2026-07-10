@@ -19,6 +19,7 @@ create table profiles (
   location_lat  numeric,
   location_lng  numeric,
   location_city text,
+  push_token    text,
   created_at    timestamptz default now(),
   updated_at    timestamptz default now()
 );
@@ -136,6 +137,57 @@ create policy "Senders can update their messages"
   on messages for update
   using (auth.uid() = sender_id)
   with check (auth.uid() = sender_id);
+
+-- ─────────────────────────────────────────
+-- BLOCKS
+-- ─────────────────────────────────────────
+create table blocks (
+  id          uuid default gen_random_uuid() primary key,
+  blocker_id  uuid references profiles(id) on delete cascade not null,
+  blocked_id  uuid references profiles(id) on delete cascade not null,
+  created_at  timestamptz default now(),
+  unique(blocker_id, blocked_id),
+  check(blocker_id <> blocked_id)
+);
+
+alter table blocks enable row level security;
+
+create policy "Users can insert own blocks"
+  on blocks for insert
+  with check (auth.uid() = blocker_id);
+
+create policy "Users can view own blocks"
+  on blocks for select
+  using (auth.uid() = blocker_id);
+
+create policy "Users can delete own blocks"
+  on blocks for delete
+  using (auth.uid() = blocker_id);
+
+-- ─────────────────────────────────────────
+-- REPORTS
+-- ─────────────────────────────────────────
+create table reports (
+  id           uuid default gen_random_uuid() primary key,
+  reporter_id  uuid references profiles(id) on delete cascade not null,
+  reported_id  uuid references profiles(id) on delete cascade not null,
+  reason       text not null,
+  details      text,
+  match_id     uuid references matches(id) on delete set null,
+  resolved     boolean default false,
+  created_at   timestamptz default now(),
+  check(reporter_id <> reported_id)
+);
+
+alter table reports enable row level security;
+
+create policy "Users can insert own reports"
+  on reports for insert
+  with check (auth.uid() = reporter_id);
+
+create policy "Users can view own reports"
+  on reports for select
+  using (auth.uid() = reporter_id);
 
 -- Enable realtime for messages
 alter publication supabase_realtime add table messages;
