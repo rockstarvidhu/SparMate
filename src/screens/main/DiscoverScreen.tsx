@@ -14,13 +14,19 @@ import { loadFilters } from './FiltersScreen';
 import AvatarComponent from '../../components/Avatar';
 
 const { width: W } = Dimensions.get('window');
-const SWIPE_THRESHOLD = 100;
+const SWIPE_THRESHOLD = 42;
 const CARD_WIDTH = W - spacing.xl * 2;
-const NOISE_DOTS = Array.from({ length: 90 }, (_, i) => ({
+const NOISE_DOTS = Array.from({ length: 220 }, (_, i) => ({
   left: (((i * 37) % 100) / 100) * W,
-  top: (((i * 53) % 100) / 100) * 900,
-  opacity: 0.035 + ((i % 4) * 0.018),
+  top: (((i * 53) % 100) / 100) * 920,
+  opacity: 0.055 + ((i % 5) * 0.018),
   size: i % 7 === 0 ? 2 : 1,
+}));
+const TEXTURE_STREAKS = Array.from({ length: 28 }, (_, i) => ({
+  left: (((i * 29) % 100) / 100) * W,
+  top: (((i * 41) % 100) / 100) * 920,
+  width: 26 + (i % 5) * 18,
+  opacity: 0.025 + (i % 3) * 0.012,
 }));
 
 // ── Profile enriched with computed distance ───────────
@@ -69,6 +75,20 @@ function MatteBackground() {
           ]}
         />
       ))}
+      {TEXTURE_STREAKS.map((streak, index) => (
+        <View
+          key={`streak-${index}`}
+          style={[
+            styles.textureStreak,
+            {
+              left: streak.left,
+              top: streak.top,
+              width: streak.width,
+              opacity: streak.opacity,
+            },
+          ]}
+        />
+      ))}
     </View>
   );
 }
@@ -95,8 +115,7 @@ function SparCard({
     outputRange: ['-12deg', '0deg', '12deg'],
     extrapolate: 'clamp',
   });
-  const likeOpacity = pan.x.interpolate({ inputRange: [20, 80], outputRange: [0, 1], extrapolate: 'clamp' });
-  const nopeOpacity = pan.x.interpolate({ inputRange: [-80, -20], outputRange: [1, 0], extrapolate: 'clamp' });
+  const nopeOpacity = pan.x.interpolate({ inputRange: [-80, -20, 20, 80], outputRange: [1, 0, 0, 1], extrapolate: 'clamp' });
 
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
@@ -104,12 +123,12 @@ function SparCard({
       [null, { dx: pan.x, dy: pan.y }],
       { useNativeDriver: false }
     ),
-    onPanResponderRelease: (_, { dx }) => {
-      if (dx > SWIPE_THRESHOLD) {
-        Animated.spring(pan, { toValue: { x: W + 100, y: 0 }, useNativeDriver: false })
-          .start(() => onSwipe('right'));
-      } else if (dx < -SWIPE_THRESHOLD) {
-        Animated.spring(pan, { toValue: { x: -(W + 100), y: 0 }, useNativeDriver: false })
+    onPanResponderRelease: (_, { dx, dy }) => {
+      const draggedDistance = Math.sqrt(dx * dx + dy * dy);
+      if (draggedDistance > SWIPE_THRESHOLD) {
+        const exitX = dx >= 0 ? W + 100 : -(W + 100);
+        const exitY = dy || 0;
+        Animated.spring(pan, { toValue: { x: exitX, y: exitY }, useNativeDriver: false })
           .start(() => onSwipe('left'));
       } else {
         Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 5, useNativeDriver: false }).start();
@@ -125,10 +144,7 @@ function SparCard({
         { transform: [{ translateX: pan.x }, { translateY: pan.y }, { rotate }] },
       ]}
     >
-      {/* SPAR / PASS stamps */}
-      <Animated.View style={[styles.stamp, styles.likeStamp, { opacity: likeOpacity }]}>
-        <Text style={styles.stampText}>SPAR 🥊</Text>
-      </Animated.View>
+      {/* PASS stamp: dragging a card always skips it; the button is used to spar. */}
       <Animated.View style={[styles.stamp, styles.nopeStamp, { opacity: nopeOpacity }]}>
         <Text style={[styles.stampText, { color: '#E24B4A' }]}>PASS ✕</Text>
       </Animated.View>
@@ -419,7 +435,7 @@ export default function DiscoverScreen() {
             style={styles.sparBtn}
             onPress={() => handleSwipe(profiles[profiles.length - 1], 'right')}
           >
-            <Text style={styles.sparBtnText}>Request spar</Text>
+            <Text style={styles.sparBtnText}>Spar</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.passBtn}>
             <Text style={styles.infoIcon}>ℹ</Text>
@@ -440,6 +456,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     borderRadius: 2,
     backgroundColor: '#FFFFFF',
+  },
+  textureStreak: {
+    position: 'absolute',
+    height: 1,
+    backgroundColor: '#FFFFFF',
+    transform: [{ rotate: '-14deg' }],
   },
   header: {
     paddingHorizontal: spacing.xl,
